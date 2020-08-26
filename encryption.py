@@ -32,13 +32,13 @@ def encrypt_details():
     encryptedUserName = fernetKey.encrypt(serviceUserName).decode()
     encryptedPassword = fernetKey.encrypt(servicePassword).decode()
 
-    with open(f"{username}.txt", "a") as userFile:
+    with open(f"User Files/{username}.txt", "a") as userFile:
         userFile.write(f"{service},{encryptedUserName},{encryptedPassword},{service2FA},\n")
 
 
 def decrypt_details():
     lookupName = str(input("Enter service to find: "))
-    with open(f"{username}.txt", "r") as userFile:
+    with open(f"User Files/{username}.txt", "r") as userFile:
         for line in userFile:
             if (lineArray := line.split(","))[0] == lookupName:
                 print(f"Service {lineArray[0]} found")
@@ -60,7 +60,7 @@ Password: {fernetKey.decrypt(lineArray[2].encode()).decode()}
 
 
 def decrypt_dump():
-    with open(f"{username}.txt", "r") as userFile:
+    with open(f"User Files/{username}.txt", "r") as userFile:
         dumpArray = [line.split(",") for line in userFile.readlines()]
 
     for service in dumpArray:
