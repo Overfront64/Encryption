@@ -2,6 +2,8 @@
 
 import base64
 import os
+import random
+import string
 
 from cryptography.fernet import Fernet, InvalidToken
 from cryptography.hazmat.backends import default_backend
@@ -21,10 +23,15 @@ def generate_key():
     return userKey
 
 
-def encrypt_details():
+def encrypt_details(generated_password):
     service = str(input("Enter service name (Must be unique): "))
     serviceUserName = str(input("Enter service username: ")).encode()
-    servicePassword = str(input("Enter service password: ")).encode()
+
+    if generated_password != "":
+        servicePassword = generated_password.encode()
+    else:
+        servicePassword = str(input("Enter service generated_password: ")).encode()
+
     service2FA = str(input("Is 2 factor-authentication being used? (y/n): ")).lower()
 
     service2FA = True if service2FA in ("y", "yes", "t", "true") else False
@@ -34,6 +41,17 @@ def encrypt_details():
 
     with open(f"User Files/{username}.txt", "a") as userFile:
         userFile.write(f"{service},{encryptedUserName},{encryptedPassword},{service2FA},\n")
+
+
+def gen_password():
+    characters = string.ascii_letters + string.digits + string.punctuation
+    length = int(input("Enter length of generated_password (recommended 12): "))
+    password_gen = "".join(random.choice(characters) for i in range(length))
+
+    print(f"Your generated generated_password: {password_gen}")
+
+    if str(input("Would you like to use this for a service? (y/n): ")).lower() in ("y", "yes", "t", "true"):
+        encrypt_details(password_gen)
 
 
 def decrypt_details():
@@ -73,7 +91,7 @@ Password: {fernetKey.decrypt(service[2].encode()).decode()}
 
 
 def clear_console():
-    os.system("cls")
+    os.system("cls" if os.name == "nt" else "clear")
 
 
 if __name__ == "__main__":
@@ -88,23 +106,27 @@ if __name__ == "__main__":
         choice = int(input("""
 ---------------- MENU ----------------
 1. Encrypt login details
-2. Decrypt login details
-3. Dump decrypted details
-4. Clear console
-5. Exit
+2. Generate password
+3. Decrypt login details
+4. Dump decrypted details
+5. Clear console (only if ran from terminal)
+6. Exit
 Please select an option by its number: """))
 
         if choice == 1:
-            encrypt_details()
+            encrypt_details("")
 
         elif choice == 2:
-            decrypt_details()
+            gen_password()
 
         elif choice == 3:
-            decrypt_dump()
+            decrypt_details()
 
         elif choice == 4:
-            clear_console()
+            decrypt_dump()
 
         elif choice == 5:
+            clear_console()
+
+        elif choice == 6:
             raise SystemExit
