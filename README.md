@@ -1,5 +1,5 @@
-# Encryption
- A python program for storing encrypted login details
+# Password Manager
+ A python program for storing encrypted login details and generating passwords
 
 ## How to Setup
  1. Open a terminal
