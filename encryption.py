@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import base64
 import os
@@ -30,7 +30,7 @@ def encrypt_details(generated_password):
     if generated_password != "":
         servicePassword = generated_password.encode()
     else:
-        servicePassword = str(input("Enter service generated_password: ")).encode()
+        servicePassword = str(input("Enter service password: ")).encode()
 
     service2FA = str(input("Is 2 factor-authentication being used? (y/n): ")).lower()
 
@@ -45,10 +45,10 @@ def encrypt_details(generated_password):
 
 def gen_password():
     characters = string.ascii_letters + string.digits + string.punctuation
-    length = int(input("Enter length of generated_password (recommended 12): "))
+    length = int(input("Enter length of password (recommended 12): "))
     password_gen = "".join(random.choice(characters) for i in range(length))
 
-    print(f"Your generated generated_password: {password_gen}")
+    print(f"Your generated password: {password_gen}")
 
     if str(input("Would you like to use this for a service? (y/n): ")).lower() in ("y", "yes", "t", "true"):
         encrypt_details(password_gen)
