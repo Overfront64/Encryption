@@ -12,6 +12,14 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 
 def generate_key():
+    if os.path.exists(f"User Files/{username}.salt"):
+        with open(f"User Files/{username}.salt", "rb") as saltFile:
+            salt = saltFile.read()
+    else:
+        with open(f"User Files/{username}.salt", "wb") as saltFile:
+            salt = os.urandom(64)
+            saltFile.write(salt)
+
     kdf = PBKDF2HMAC(
             algorithm=hashes.SHA256(),
             length=32,
@@ -19,8 +27,7 @@ def generate_key():
             iterations=100000,
             backend=default_backend())
 
-    userKey = base64.urlsafe_b64encode(kdf.derive(password))
-    return userKey
+    return Fernet(base64.urlsafe_b64encode(kdf.derive(password)))
 
 
 def encrypt_details(generated_password):
@@ -55,17 +62,21 @@ def gen_password():
 
 
 def decrypt_details():
-    lookupName = str(input("Enter service to find: "))
-    with open(f"User Files/{username}.txt", "r") as userFile:
-        for line in userFile:
-            if (lineArray := line.split(","))[0] == lookupName:
-                print(f"Service {lineArray[0]} found")
-                break
-        else:
-            print("Service not found")
-            return
+    try:
+        with open(f"User Files/{username}.txt", "r") as userFile:
+            lookupName = str(input("Enter service to find: "))
+            for line in userFile:
+                if (lineArray := line.split(","))[0] == lookupName:
+                    print(f"Service {lineArray[0]} found")
+                    lineArray[3] = "Enabled" if lineArray[3] == "True" else "Disabled"
+                    break
+            else:
+                print("Service not found")
+                return
 
-    lineArray[3] = "Enabled" if lineArray[3] == "True" else "Disabled"
+    except FileNotFoundError:
+        print("The folder or folder containing details does not exist. Please encrypt details first. ")
+        return
 
     try:
         print(f"""
@@ -78,16 +89,26 @@ Password: {fernetKey.decrypt(lineArray[2].encode()).decode()}
 
 
 def decrypt_dump():
-    with open(f"User Files/{username}.txt", "r") as userFile:
-        dumpArray = [line.split(",") for line in userFile.readlines()]
+    try:
+        with open(f"User Files/{username}.txt", "r") as userFile:
+            dumpArray = [line.split(",") for line in userFile.readlines()]
 
-    for service in dumpArray:
-        service[3] = "Enabled" if service[3] == "True" else "Disabled"
-        print(f"""
+        for service in dumpArray:
+            service[3] = "Enabled" if service[3] == "True" else "Disabled"
+
+            try:
+                print(f"""
 Service: {service[0]}
 Username: {fernetKey.decrypt(service[1].encode()).decode()}
 Password: {fernetKey.decrypt(service[2].encode()).decode()}
 2 Factor Authentication: {service[3]}""")
+
+            except InvalidToken:
+                print("Invalid key, unable to decrypt")
+                return
+    except FileNotFoundError:
+        print("The folder or folder containing details does not exist. Please encrypt details first. ")
+        return
 
 
 def clear_console():
@@ -95,11 +116,12 @@ def clear_console():
 
 
 if __name__ == "__main__":
-    salt = b'\xff\x8b\xaa\xdf\xe0M\x93\x90\xe6\xcf\x9a\xd1w\x89\x0c\xe2'
+    if not os.path.exists("User Files"):
+        os.mkdir("User Files")
     username = str(input("Enter username: "))
     password = str(input("Enter password: ")).encode()
-    key = generate_key()
-    fernetKey = Fernet(key)
+    fernetKey = generate_key()
+    del password
 
     # ---------------- Menu ----------------
     while True:
