@@ -40,7 +40,6 @@ def encrypt_details(generated_password):
         servicePassword = str(input("Enter service password: ")).encode()
 
     service2FA = str(input("Is 2 factor-authentication being used? (y/n): ")).lower()
-
     service2FA = True if service2FA in ("y", "yes", "t", "true") else False
 
     encryptedUserName = fernetKey.encrypt(serviceUserName).decode()
@@ -111,6 +110,32 @@ Password: {fernetKey.decrypt(service[2].encode()).decode()}
         return
 
 
+def delete_service():
+    toDeleteName = str(input("What service are you deleting? "))
+
+    try:
+        with open(f"User Files/{username}.txt", "r") as userFile:
+            serviceList = [line.split(",") for line in userFile.readlines()]
+
+    except FileNotFoundError:
+        print("The folder or folder containing details does not exist. Please encrypt details first. ")
+        return
+
+    for pos, service in enumerate(serviceList):
+        if service[0] == toDeleteName:
+            del serviceList[pos]
+            break
+    else:
+        print("Service not found")
+        return
+
+    with open(f"User Files/{username}.txt", "w") as userFile:
+        for service in serviceList:
+            userFile.write(f"{service[0]},{service[1]},{service[2]},{service[3]},\n")
+
+    print(f"Deleted service {toDeleteName}")
+
+
 def clear_console():
     os.system("cls" if os.name == "nt" else "clear")
 
@@ -131,8 +156,9 @@ if __name__ == "__main__":
 2. Generate password
 3. Decrypt login details
 4. Dump decrypted details
-5. Clear console (only if ran from terminal)
-6. Exit
+5. Delete details
+6. Clear console (only if ran from terminal)
+7. Exit
 Please select an option by its number: """))
 
         if choice == 1:
@@ -148,7 +174,10 @@ Please select an option by its number: """))
             decrypt_dump()
 
         elif choice == 5:
-            clear_console()
+            delete_service()
 
         elif choice == 6:
+            clear_console()
+
+        elif choice == 7:
             raise SystemExit
