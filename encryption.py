@@ -30,8 +30,10 @@ def generate_key():
     return Fernet(base64.urlsafe_b64encode(kdf.derive(password)))
 
 
-def encrypt_details(generated_password):
-    service = str(input("Enter service name (Must be unique): "))
+def encrypt_details(service="", generated_password=""):
+    if service == "":
+        service = str(input("Enter service name (Must be unique): "))
+
     serviceUserName = str(input("Enter service username: ")).encode()
 
     if generated_password != "":
@@ -49,15 +51,18 @@ def encrypt_details(generated_password):
         userFile.write(f"{service},{encryptedUserName},{encryptedPassword},{service2FA},\n")
 
 
-def gen_password():
+def gen_password(service="", to_encrypt=""):
     characters = string.ascii_letters + string.digits + string.punctuation
     length = int(input("Enter length of password (recommended 12): "))
     password_gen = "".join(random.choice(characters) for i in range(length))
 
     print(f"Your generated password: {password_gen}")
 
-    if str(input("Would you like to use this for a service? (y/n): ")).lower() in ("y", "yes", "t", "true"):
-        encrypt_details(password_gen)
+    if to_encrypt == "":
+        to_encrypt = str(input("Would you like to use this for a service? (y/n): ")).lower()
+
+    if to_encrypt in ("y", "yes", "t", "true"):
+        encrypt_details(service, password_gen)
 
 
 def decrypt_details():
@@ -91,6 +96,7 @@ def decrypt_dump():
     try:
         with open(f"User Files/{username}.txt", "r") as userFile:
             dumpArray = [line.split(",") for line in userFile.readlines()]
+            dumpArray = sorted(dumpArray)
 
         for service in dumpArray:
             service[3] = "Enabled" if service[3] == "True" else "Disabled"
@@ -110,8 +116,12 @@ Password: {fernetKey.decrypt(service[2].encode()).decode()}
         return
 
 
-def delete_service():
-    toDeleteName = str(input("What service are you deleting? "))
+def delete_service(to_delete=""):
+    if to_delete == "":
+        to_delete = str(input("What service are you deleting? "))
+        toReturn = True
+    else:
+        toReturn = False
 
     try:
         with open(f"User Files/{username}.txt", "r") as userFile:
@@ -122,7 +132,7 @@ def delete_service():
         return
 
     for pos, service in enumerate(serviceList):
-        if service[0] == toDeleteName:
+        if service[0] == to_delete:
             del serviceList[pos]
             break
     else:
@@ -133,7 +143,21 @@ def delete_service():
         for service in serviceList:
             userFile.write(f"{service[0]},{service[1]},{service[2]},{service[3]},\n")
 
-    print(f"Deleted service {toDeleteName}")
+    if toReturn:
+        print(f"Deleted service {to_delete}")
+
+
+def replace_details():
+    toReplaceName = str(input("What service are you updating? "))
+    delete_service(toReplaceName)
+
+    genChoice = str(input("Would you like to use a generated password? ")).lower()
+    if genChoice in ("y", "yes", "t", "true"):
+        gen_password(toReplaceName, "y")
+    else:
+        encrypt_details(service=toReplaceName)
+
+    print(f"Details for {toReplaceName} have been updated")
 
 
 def clear_console():
@@ -156,13 +180,14 @@ if __name__ == "__main__":
 2. Generate password
 3. Decrypt login details
 4. Dump decrypted details
-5. Delete details
-6. Clear console (only if ran from terminal)
-7. Exit
+5. Replace details
+6. Delete details
+7. Clear console (only if ran from terminal)
+8. Exit
 Please select an option by its number: """))
 
         if choice == 1:
-            encrypt_details("")
+            encrypt_details()
 
         elif choice == 2:
             gen_password()
@@ -174,10 +199,13 @@ Please select an option by its number: """))
             decrypt_dump()
 
         elif choice == 5:
-            delete_service()
+            replace_details()
 
         elif choice == 6:
-            clear_console()
+            delete_service()
 
         elif choice == 7:
+            clear_console()
+
+        elif choice == 8:
             raise SystemExit
